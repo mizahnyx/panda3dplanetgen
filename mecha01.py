@@ -9,6 +9,12 @@ from random import random
 from panda3d.core import TextNode, TransformState
 from direct.gui.DirectGui import *
 from panda3d.core import TransparencyAttrib
+from panda3d.bullet import BulletWorld
+from panda3d.bullet import BulletDebugNode, BulletRigidBodyNode, BulletGhostNode
+from panda3d.bullet import BulletTriangleMesh, BulletTriangleMeshShape
+from panda3d.bullet import BulletBoxShape, BulletSphereShape
+from panda3d.bullet import BulletGenericConstraint
+from panda3d.core import LVector3f, Point3
 
 class Planet():
     # http://devmag.org.za/2009/04/25/perlin-noise/
@@ -213,19 +219,32 @@ class Planet():
                             prim2.addVertex(x*2*n12 + s*n12 + (j + 1)*n1 + i + 0)
                             prim2.addVertex(x*2*n12 + s*n12 + (j + 1)*n1 + i + 1)
 
-        geom = Geom(vdata)
-        geom.addPrimitive(prim)
-        geom2 = Geom(vdata2)
-        geom2.addPrimitive(prim2)
+        self.landGeom = Geom(vdata)
+        self.landGeom.addPrimitive(prim)
+        self.oceanGeom = Geom(vdata2)
+        self.oceanGeom.addPrimitive(prim2)
 
-        self.landNode = GeomNode('land')
-        self.landNode.addGeom(geom)
-        self.oceanNode = GeomNode('ocean')
-        self.oceanNode.addGeom(geom2)
+        landMesh = BulletTriangleMesh()
+        landMesh.addGeom(self.landGeom)
+        self.landShape = BulletTriangleMeshShape(landMesh, dynamic=False)
+        self.oceanShape = BulletSphereShape(1.0)
 
-        self.landNodePath = render.attachNewNode(self.landNode)
-        self.oceanNodePath = self.landNodePath.attachNewNode(self.oceanNode)
-        self.oceanNodePath.setTransparency(TransparencyAttrib.MAlpha)
+        self.node = BulletRigidBodyNode('Planet Land')
+        self.node.addShape(self.landShape)
+        self.nodePath = render.attachNewNode(self.node)
+
+        self.oceanNode = BulletGhostNode('Planet Ocean')
+        self.oceanNode.addShape(self.oceanShape)
+        oceanPhysicsNodePath = self.nodePath.attachNewNode(self.oceanNode)
+
+        landNode = GeomNode('land')
+        landNode.addGeom(self.landGeom)
+        landNodePath = self.nodePath.attachNewNode(landNode)
+        oceanNode = GeomNode('ocean')
+        oceanNode.addGeom(self.oceanGeom)
+        oceanNodePath = oceanPhysicsNodePath.attachNewNode(oceanNode)
+        oceanNodePath.setTransparency(TransparencyAttrib.MAlpha)
+
         #self.tex = loader.loadTexture('maps/noise.rgb')
         #self.nodePath.setTexture(self.tex)
 
@@ -237,6 +256,45 @@ class MyApp(ShowBase):
         self.plight = PointLight('plight')
         self.pnlp = self.camera.attachNewNode(self.plight)
         render.setLight(self.pnlp)
+
+        self.debugNode = BulletDebugNode('Debug')
+        self.debugNode.showWireframe(True)
+        self.debugNode.showConstraints(True)
+        self.debugNode.showBoundingBoxes(False)
+        self.debugNode.showNormals(False)
+        self.debugNP = render.attachNewNode(self.debugNode)
+        self.debugNP.show()
+
+        self.world = BulletWorld()
+        self.world.setDebugNode(self.debugNode)
+        self.world.attachRigidBody(planet.node)
+        self.world.attachGhost(planet.oceanNode)
+
+        shape = BulletBoxShape(Vec3(0.02, 0.02, 0.02))
+        node = BulletRigidBodyNode('Box')
+        node.setMass(1.0)
+        node.addShape(shape)
+        np = render.attachNewNode(node)
+        np.setPos(0, 1.5, 0)
+        self.np01 = np
+        self.world.attachRigidBody(node)
+        node.applyCentralImpulse(Vec3(0.4, 0.6, 1.0))
+
+        self.taskMgr.add(self.physicsUpdateTask, "PhysicsUpdateTask")
+        
+    def physicsUpdateTask(self, task):
+        dt = globalClock.getDt()
+        self.world.doPhysics(dt)
+
+        # simulating spherical gravity
+        node = self.np01.getNode(0)
+        pos = self.np01.getPos()
+        down_vector = Vec3(0, 0, 0) - pos
+        down_vector.normalize()
+        gravity = LVector3f(down_vector*9.81)
+        node.setGravity(gravity)
+
+        return Task.cont
 
     def spinCameraTask(self, task):
         angleDegrees = task.time * 6.0
