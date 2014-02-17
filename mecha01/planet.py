@@ -38,8 +38,8 @@ class Planet(object):
         self.__n = n
         self.__height_unit = pi / (2*self.__n)
 
-    def set_radius(self): return self.__radius
-    def get_radius(self, radius): self.__radius = radius
+    def get_radius(self): return self.__radius
+    def set_radius(self, radius): self.__radius = radius
 
     def get_gradient(self): return self.__color_gradient
     def set_gradient(self, gradient): self.__color_gradient = gradient
