@@ -21,6 +21,8 @@ from panda3d.core import Quat
 from mecha01 import Planet, CharacterController
 from math import sqrt
 
+# http://www.theforbiddenknowledge.com/hardtruth/fire2.htm
+
 class Mecha01Client(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
@@ -93,7 +95,7 @@ class Mecha01Client(ShowBase):
         #     100.0 * sin(angleRadians),
         #     -100.0 * cos(angleRadians), 0.0)
         # self.camera.setHpr(angleDegrees, 0, 0)
-        self.camera.setPos(self.np01.getPos()*1.5)
+        self.camera.setPos(self.np01.getPos()*5.0)
         self.camera.lookAt(self.np01)
         return Task.cont
 

@@ -287,7 +287,6 @@ class Planet(object):
             self.__average_values(base, (1, i, 0), (3, n, n - i))
             self.__average_values(base, (3, 0, i), (0, i, n))
 
-
     def __gradient(self, gradient, value):
         keys = gradient.keys()
         keys.sort()
