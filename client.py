@@ -68,7 +68,7 @@ class Mecha01Client(ShowBase):
         self.accept('arrow_up', self.test01, ["shalala"])
 
     def test01(self, x):
-        print x
+        print(x)
 
     def gravity(self, position):
         down_vector = Vec3(0, 0, 0) - position

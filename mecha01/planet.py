@@ -249,7 +249,7 @@ class Planet(object):
 
     def __height_i(self, face, i, j):
         n1 = self.__n + 1
-        return face*n1*n1 + i*n1 + j
+        return int(face*n1*n1 + i*n1 + j)
 
     def __average_values(self, base, *vtxspecs):
         v = 0
@@ -288,7 +288,7 @@ class Planet(object):
             self.__average_values(base, (3, 0, i), (0, i, n))
 
     def __gradient(self, gradient, value):
-        keys = gradient.keys()
+        keys = list(gradient.keys())
         keys.sort()
         for i in range(len(keys) - 1):
             if value >= keys[i] and value < keys[i + 1]:
